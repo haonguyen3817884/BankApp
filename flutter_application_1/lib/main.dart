@@ -60,7 +60,7 @@ Future<List<Widget>> contactData() async {
     }
 
     if (null == decodedData[i]["age"] || 0 == decodedData[i]["age"]) {
-      _customerAge = "undefined";
+      _customerAge = "No Information";
     } else {
       _customerAge = decodedData[i]["age"];
     }
