@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 
@@ -13,56 +14,83 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-          // This is the theme of your application.
-          //
-          // Try running your application with "flutter run". You'll see the
-          // application has a blue toolbar. Then, without quitting the app, try
-          // changing the primarySwatch below to Colors.green and then invoke
-          // "hot reload" (press "r" in the console where you ran "flutter run",
-          // or simply save your changes to "hot reload" in a Flutter IDE).
-          // Notice that the counter didn't reset back to zero; the application
-          // is not restarted.
-          primarySwatch: Colors.blue),
-      home: const Contact(title: "Contact"),
-    );
+        title: 'Flutter Demo',
+        theme: ThemeData(
+            // This is the theme of your application.
+            //
+            // Try running your application with "flutter run". You'll see the
+            // application has a blue toolbar. Then, without quitting the app, try
+            // changing the primarySwatch below to Colors.green and then invoke
+            // "hot reload" (press "r" in the console where you ran "flutter run",
+            // or simply save your changes to "hot reload" in a Flutter IDE).
+            // Notice that the counter didn't reset back to zero; the application
+            // is not restarted.
+            primarySwatch: Colors.blue),
+        home: const Contact(
+            title: "Contact",
+            customerFontFamily: "SF Pro Display",
+            customerFontStyle: FontStyle.normal));
   }
 }
 
 class Contact extends StatefulWidget {
-  const Contact({Key? key, required this.title}) : super(key: key);
+  const Contact(
+      {Key? key,
+      required this.title,
+      required this.customerFontFamily,
+      required this.customerFontStyle})
+      : super(key: key);
 
   final String title;
+  final String customerFontFamily;
+  final FontStyle customerFontStyle;
 
   @override
   State<Contact> createState() => _ContactState();
 }
 
-Future<List<Widget>> contactData() async {
-  var endPoint = "https://mocki.io/v1/49698a5a-61eb-4ac8-9d40-cf93c6aa1923";
+Future<List<dynamic>> contactData() async {
+  String endPoint = "https://mocki.io/v1/49698a5a-61eb-4ac8-9d40-cf93c6aa1923";
   var response = await http
       .get(Uri.parse(endPoint), headers: {'Content-Type': 'application/json'});
   String data = convert.utf8.decode(response.bodyBytes);
   List<dynamic> decodedData = convert.jsonDecode(data);
+
+  return decodedData;
+}
+
+TextStyle customerTextStyle(double fontSize, String fontFamily,
+    FontStyle fontStyle, FontWeight fontWeight, Color textColor) {
+  return TextStyle(
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      fontStyle: fontStyle,
+      fontWeight: fontWeight,
+      color: textColor);
+}
+
+Future<List<Widget>> contactWidgetsFilledData(
+    String textFontFamily, FontStyle textFontStyle) async {
+  List<dynamic> customerData = await contactData();
   List<Widget> contactPlaces = <Widget>[];
 
-  for (var i = 0; i < decodedData.length; ++i) {
-    var _customerName = decodedData[i]["name"];
-    var _customerImage = decodedData[i]["avatar"];
-    dynamic _customerAge = "";
-    var _customerCity = "";
+  for (var i = 0; i < customerData.length; ++i) {
+    var customer = customerData[i];
+    String customerName = customer["name"];
+    String customerImage = customer["avatar"];
+    dynamic customerAge;
+    String customerCity = "";
 
-    if ("" == decodedData[i]["city"]) {
-      _customerCity = "undefined";
+    if ("" == customer["city"]) {
+      customerCity = "undefined";
     } else {
-      _customerCity = decodedData[i]["city"];
+      customerCity = customer["city"];
     }
 
-    if (null == decodedData[i]["age"] || 0 == decodedData[i]["age"]) {
-      _customerAge = "No Information";
+    if (null == customer["age"] || 0 == customer["age"]) {
+      customerAge = "No Information";
     } else {
-      _customerAge = decodedData[i]["age"];
+      customerAge = customer["age"];
     }
     Widget contactPlace = Container(
         child: Row(children: <Widget>[
@@ -71,35 +99,36 @@ Future<List<Widget>> contactData() async {
               height: 43,
               decoration: BoxDecoration(
                   image: DecorationImage(
-                      fit: BoxFit.fill, image: NetworkImage(_customerImage)),
+                      fit: BoxFit.fill, image: NetworkImage(customerImage)),
                   borderRadius: BorderRadius.circular(43))),
           const SizedBox(width: 17),
           Expanded(
               child: Column(children: <Widget>[
             Row(children: <Widget>[
-              Text('$_customerName',
-                  style: const TextStyle(
+              Text(customerName,
+                  style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
-                      fontStyle: FontStyle.normal,
-                      fontFamily: "SF Pro Display",
+                      fontStyle: textFontStyle,
+                      fontFamily: textFontFamily,
                       fontWeight: FontWeight.w500)),
               const Expanded(child: SizedBox()),
-              Text('$_customerAge',
-                  style: const TextStyle(
+              Text('$customerAge',
+                  style: TextStyle(
                       fontSize: 12,
-                      color: Color.fromARGB(255, 104, 104, 104),
-                      fontStyle: FontStyle.normal,
-                      fontFamily: "SF Pro Display",
+                      color: const Color(0xFF79767D),
+                      fontStyle: textFontStyle,
+                      fontFamily: textFontFamily,
                       fontWeight: FontWeight.w400))
             ]),
+            const SizedBox(height: 5),
             Row(children: <Widget>[
-              Text(_customerCity,
-                  style: const TextStyle(
+              Text(customerCity,
+                  style: TextStyle(
                       fontSize: 14,
-                      color: Color.fromARGB(255, 104, 104, 104),
-                      fontStyle: FontStyle.normal,
-                      fontFamily: "SF Pro Display",
+                      color: const Color(0xFF79767D),
+                      fontStyle: textFontStyle,
+                      fontFamily: textFontFamily,
                       fontWeight: FontWeight.w400))
             ])
           ]))
@@ -108,7 +137,6 @@ Future<List<Widget>> contactData() async {
 
     contactPlaces.add(contactPlace);
   }
-
   return contactPlaces;
 }
 
@@ -123,7 +151,8 @@ class _ContactState extends State<Contact> {
   }
 
   void getData() async {
-    List<Widget> contactWidgets = await contactData();
+    List<Widget> contactWidgets = await contactWidgetsFilledData(
+        widget.customerFontFamily, widget.customerFontStyle);
 
     setState(() {
       _contactWidgets = contactWidgets;
@@ -135,28 +164,32 @@ class _ContactState extends State<Contact> {
     return Scaffold(
         appBar: AppBar(
             title: Text(widget.title,
-                style: const TextStyle(
-                    fontFamily: "SF Pro Display",
+                style: TextStyle(
+                    fontFamily: widget.customerFontFamily,
                     fontWeight: FontWeight.w500,
                     fontSize: 16,
-                    fontStyle: FontStyle.normal)),
+                    fontStyle: widget.customerFontStyle)),
             leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_rounded, size: 19),
                 onPressed: () => {}),
             centerTitle: true,
-            backgroundColor: Colors.black),
+            systemOverlayStyle:
+                const SystemUiOverlayStyle(statusBarColor: Color(0xFF1E1F1F)),
+            backgroundColor: Colors.transparent,
+            elevation: 0.0),
         body: Container(
             child: Column(children: <Widget>[
               Container(
                   child: Column(children: <Widget>[
-                    const Padding(
-                        padding: EdgeInsets.only(top: 32, right: 20, left: 24),
+                    Padding(
+                        padding:
+                            const EdgeInsets.only(top: 32, right: 20, left: 24),
                         child: Text("Contacts",
                             style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.white,
-                                fontStyle: FontStyle.normal,
-                                fontFamily: "SF Pro Display",
+                                fontStyle: widget.customerFontStyle,
+                                fontFamily: widget.customerFontFamily,
                                 fontWeight: FontWeight.w400))),
                     Padding(
                         padding: const EdgeInsets.only(
@@ -164,10 +197,11 @@ class _ContactState extends State<Contact> {
                         child: Column(children: _contactWidgets))
                   ], crossAxisAlignment: CrossAxisAlignment.start),
                   decoration: BoxDecoration(
-                      color: const Color(0x00282729),
+                      color: const Color(0xFF282729),
                       borderRadius: BorderRadius.circular(15)),
                   margin: const EdgeInsets.only(top: 14))
             ]),
-            decoration: const BoxDecoration(color: Colors.black)));
+            decoration: const BoxDecoration(color: Colors.transparent)),
+        backgroundColor: const Color(0xFF1E1F1F));
   }
 }
